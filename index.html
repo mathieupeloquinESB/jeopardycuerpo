@@ -1,0 +1,266 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jeopardy del cuerpo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<style>
+/* Layout: banknote-style board. Slab numerals for values, hyperlegible text for projection. */
+:root {
+  --paper: #f3f1e6; --paper-2: #e7e4d3; --ink: #16251d; --ink-soft: #4b5a50;
+  --line: #c9c5ae; --played: #d6d3c4; --played-ink: #8d8b7e; --gold: #b0821c;
+  --good: #2f7d32; --bad: #b2462e;
+  --c1: #1f6f5c; --c2: #b2462e; --c3: #3b5aa6; --c4: #8a3f8c;
+  --c5: #c07a14; --c6: #2f7d32; --c7: #a8364f; --c8: #3f6d80;
+  --tile-ink: #ffffff;
+  --display: "Alfa Slab One", "Rockwell", "Georgia", serif;
+  --body: "Atkinson Hyperlegible", "Verdana", "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101a15; --paper-2: #18251e; --ink: #ecebdf; --ink-soft: #a9b3aa;
+    --line: #2c3a32; --played: #1d2721; --played-ink: #5d6a62; --gold: #d9a640;
+    --good: #4caf50; --bad: #d9654a;
+    --c1: #2a8a72; --c2: #c1563d; --c3: #4a6bbd; --c4: #9a50a0;
+    --c5: #c98a22; --c6: #3d8f41; --c7: #b94761; --c8: #4c8299; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #101a15; --paper-2: #18251e; --ink: #ecebdf; --ink-soft: #a9b3aa;
+  --line: #2c3a32; --played: #1d2721; --played-ink: #5d6a62; --gold: #d9a640;
+  --good: #4caf50; --bad: #d9654a;
+  --c1: #2a8a72; --c2: #c1563d; --c3: #4a6bbd; --c4: #9a50a0;
+  --c5: #c98a22; --c6: #3d8f41; --c7: #b94761; --c8: #4c8299; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: clamp(16px, 1.3vw, 22px); line-height: 1.4; }
+.app { min-height: 100%; box-sizing: border-box; padding-block: clamp(16px, 2.5vw, 36px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: clamp(16px, 2vw, 28px); max-width: 1500px; margin: 0 auto; }
+header.bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 3px double var(--line); padding-bottom: 12px; }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
+.brand h1 { font-family: var(--display); font-weight: 400; margin: 0; font-size: clamp(26px, 3.4vw, 54px); line-height: 1; text-wrap: balance; }
+.brand .serial { font-size: .8em; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+.btn { border: 2px solid var(--ink); background: transparent; border-radius: 8px; padding: .55em 1em; font-weight: 700; }
+.btn:hover { background: var(--paper-2); }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.btn.danger.armed { background: var(--bad); color: #fff; }
+.grid { display: grid; gap: clamp(12px, 1.4vw, 22px); grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cat { text-align: left; border: 0; border-radius: 12px; background: var(--cat); color: var(--tile-ink);
+  padding: clamp(16px, 1.8vw, 28px); min-height: clamp(130px, 17vh, 220px);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+  box-shadow: inset 0 0 0 6px rgba(255,255,255,.14), inset 0 0 0 7px rgba(0,0,0,.12); transition: transform .12s ease; }
+.cat:not(.finished):hover { transform: translateY(-3px); }
+.cat .name { font-family: var(--display); font-weight: 400; font-size: clamp(20px, 2.1vw, 36px); line-height: 1.08; text-wrap: balance; }
+.cat .left { font-size: .9em; letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
+.cat .pips { display: flex; gap: 6px; flex-wrap: wrap; }
+.cat .pip { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.9); }
+.cat .pip.done { background: rgba(0,0,0,.28); }
+.cat.finished { background: var(--played); color: var(--played-ink); box-shadow: inset 0 0 0 2px var(--line); }
+.cat.finished:hover { box-shadow: inset 0 0 0 3px var(--played-ink); }
+.cat.finished .pip { background: var(--played-ink); opacity: .4; }
+.foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--ink-soft); }
+.confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cat-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.chip { width: 22px; height: 22px; border-radius: 50%; background: var(--cat); flex: none; }
+.cat-head h2 { font-family: var(--display); font-weight: 400; margin: 0; font-size: clamp(28px, 3.6vw, 60px); line-height: 1.05; text-wrap: balance; }
+.values { display: grid; gap: clamp(12px, 1.4vw, 22px); grid-template-columns: repeat(var(--vals, 5), minmax(0, 1fr)); }
+@media (max-width: 760px) { .values { grid-template-columns: minmax(0, 1fr); } }
+.val { display: flex; flex-direction: column; gap: 8px; }
+.note { border: 0; border-radius: 12px; background: var(--cat); color: var(--tile-ink); min-height: clamp(150px, 30vh, 340px); padding: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: inset 0 0 0 6px rgba(255,255,255,.16), inset 0 0 0 7px rgba(0,0,0,.12); transition: transform .12s ease; }
+.note:not(:disabled):hover { transform: translateY(-4px); }
+.note .amt { font-family: var(--display); font-size: clamp(44px, 6vw, 110px); line-height: 1; font-variant-numeric: tabular-nums; }
+.note .cur { letter-spacing: .2em; text-transform: uppercase; font-weight: 700; font-size: .85em; }
+.note .team { font-size: .85em; font-weight: 700; background: rgba(0,0,0,.22); padding: 2px 10px; border-radius: 999px; }
+.note:disabled { background: var(--played); color: var(--played-ink); box-shadow: none; cursor: not-allowed; }
+.note:disabled .team { background: transparent; }
+.reopen { align-self: center; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: .3em 1em; font-size: .9em; color: var(--ink-soft); }
+.reopen:hover { background: var(--paper-2); color: var(--ink); }
+.qcard { flex: 1; border-radius: 16px; border: 3px solid var(--cat); background: var(--paper-2); display: flex; flex-direction: column; min-height: 60vh; overflow: hidden; }
+.qtop { background: var(--cat); color: var(--tile-ink); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px clamp(16px, 2vw, 28px); }
+.qtop .qcat { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.qtop .qamt { font-family: var(--display); font-size: clamp(22px, 2.4vw, 40px); line-height: 1; }
+.qbody { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(18px, 3vh, 40px); padding: clamp(20px, 4vw, 60px); text-align: center; }
+.equipo { font-family: var(--display); background: var(--gold); color: #1a1408; padding: .25em .9em; border-radius: 999px; font-size: clamp(18px, 2vw, 32px); }
+.qtext { border: 0; background: transparent; padding: 0; max-width: 32ch; min-width: 0; font-size: clamp(30px, 4.4vw, 76px); font-weight: 700; line-height: 1.15; text-wrap: balance; }
+.qtext.static { cursor: default; }
+.hint { color: var(--ink-soft); font-size: .95em; }
+.answer { border-top: 3px double var(--line); padding-top: clamp(14px, 2vh, 28px); max-width: 36ch; min-width: 0;
+  font-size: clamp(26px, 3.6vw, 62px); line-height: 1.2; color: var(--cat); font-weight: 700; text-wrap: balance; }
+.answer .lbl { display: block; font-size: .4em; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: .3em; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(10px, 1.4vw, 20px); width: min(100%, 1100px); }
+@media (max-width: 760px) { .opts { grid-template-columns: minmax(0, 1fr); } }
+.opt { display: flex; align-items: center; gap: .7em; text-align: left; border: 3px solid var(--line); background: var(--paper); border-radius: 12px;
+  padding: .6em .9em; font-size: clamp(22px, 2.6vw, 44px); font-weight: 700; line-height: 1.2; min-width: 0; }
+.opt:hover:not(:disabled) { border-color: var(--cat); }
+.opt .ltr { flex: none; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--cat); color: var(--tile-ink); display: grid; place-items: center; font-family: var(--display); font-weight: 400; font-size: .8em; }
+.opt.wrong { border-color: var(--bad); color: var(--played-ink); text-decoration: line-through; text-decoration-color: var(--bad); }
+.opt.wrong .ltr { background: var(--bad); }
+.opt.right { border-color: var(--good); background: var(--good); color: #fff; }
+.opt.right .ltr { background: #fff; color: var(--good); }
+.opt:disabled { cursor: default; }
+@media (prefers-reduced-motion: no-preference) {
+  .answer, .opt.right { animation: rise .35s ease-out; }
+  @keyframes rise { from { opacity: .2; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+}
+@media (prefers-reduced-motion: reduce) { .cat, .note { transition: none; } }
+</style>
+
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}</style></head><body>
+<div class="app" id="app"></div>
+
+<script>
+/* ===== GAME DATA: the only part to edit ===== */
+const CONFIG = {
+  title: "Jeopardy del cuerpo",
+  subtitle: "ESP 500 · El cuerpo humano",
+  unit: "puntos",
+  values: [100, 200, 300, 400, 500],
+  teamValueIndex: 4,          // index in values that shows the team label; -1 for none
+  ui: {
+    home: "← Inicio", reopen: "Reabrir", newGame: "Nuevo juego",
+    confirm: "¿Borrar todo el tablero?", yes: "Sí, nuevo juego", cancel: "Cancelar",
+    team: "Pregunta de equipo", hintOpen: "Haz clic en la pregunta para ver la respuesta",
+    showAnswer: "Ver la respuesta", answerLabel: "Respuesta",
+    played: "preguntas jugadas", finished: "Terminado", question: "pregunta", questions: "preguntas"
+  },
+  storageKey: "jeopardy-esp500-cuerpo-v1"
+};
+const CATS = [
+  { name: "Traducción", q: [
+    { q: "Traduce: <em>la tête</em>", answer: "cabeza" },
+    { q: "Traduce: <em>le bras</em>", answer: "brazo" },
+    { q: "Traduce: <em>le cou</em>", answer: "cuello" },
+    { q: "Traduce: <em>le dos</em>", answer: "espalda" },
+    { q: "Traduce: <em>la gorge et le ventre</em>", answer: "garganta y vientre" }
+  ]},
+  { name: "¿Qué soy? La cabeza", q: [
+    { q: "Son dos y son para ver.", answer: "ojos" },
+    { q: "Es para comer y hablar.", answer: "boca" },
+    { q: "Son dos y son para escuchar.", answer: "orejas" },
+    { q: "Es para pensar.", answer: "cerebro" },
+    { q: "Está arriba de los ojos y abajo del pelo.", answer: "frente" }
+  ]},
+  { name: "¿Qué soy? El cuerpo", q: [
+    { q: "Hace «pum pum» y es rojo.", answer: "corazón" },
+    { q: "Está en la bota.", answer: "pie" },
+    { q: "Está en el centro de la pierna.", answer: "rodilla" },
+    { q: "Está en el centro del brazo.", answer: "codo" },
+    { q: "Sirve para respirar. Tenemos dos:<br>¿cómo se dice en plural?", answer: "pulmones" }
+  ]},
+  { name: "Emojis: la cabeza", q: [
+    { q: "¿Qué es? 👃", answer: "nariz" },
+    { q: "¿Qué es? 👅", answer: "lengua" },
+    { q: "¿Qué son? 🦷🦷🦷", answer: "dientes" },
+    { q: "¿Qué son? 👄", answer: "labios" },
+    { q: "¿Qué es? 🙂<br>Y nombra tres partes.", answer: "cara<br><em>+ tres partes: frente, mejilla, mentón, ojos, nariz, boca...</em>" }
+  ]},
+  { name: "Emojis: el cuerpo", q: [
+    { q: "¿Qué es? ✋", answer: "mano" },
+    { q: "¿Qué es? 🦵", answer: "pierna" },
+    { q: "¿Qué es? 🦴", answer: "hueso" },
+    { q: "¿Qué es? 💪<br>(no es el brazo)", answer: "músculo" },
+    { q: "¿Qué tienen en común? ☝️ 🦶", answer: "dedos" }
+  ]},
+  { name: "Doler", q: [
+    { q: "Completa:<br>Me ___ el pecho.", answer: "duele" },
+    { q: "Completa:<br>Me ___ las mejillas.", answer: "duelen" },
+    { q: "Completa:<br>A ella ___ duele la piel.", answer: "le" },
+    { q: "Traduce:<br><em>Ils ont mal aux épaules.</em>", answer: "Les duelen los hombros." },
+    { q: "Traduce la pregunta y la respuesta:<br><em>Qu'est-ce qui te fait mal ?<br>J'ai mal aux fesses.</em>", answer: "¿Qué te duele?<br>Me duele el trasero." }
+  ]}
+];
+/* ===== END GAME DATA ===== */
+
+const COLORS = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)","var(--c6)","var(--c7)","var(--c8)"];
+const V = CONFIG.values, U = CONFIG.ui, LETTERS = "ABCDEF";
+let played = {};
+try { played = JSON.parse(localStorage.getItem(CONFIG.storageKey) || "{}") || {}; } catch (e) { played = {}; }
+const save = () => { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(played)); } catch (e) {} };
+const key = (c, v) => c + "-" + v;
+const isPlayed = (c, v) => !!played[key(c, v)];
+const leftIn = c => V.filter((_, v) => !isPlayed(c, v)).length;
+const color = i => COLORS[i % COLORS.length];
+
+let view = { name: "home" }, armed = false;
+const app = document.getElementById("app");
+
+const header = showHome => `<header class="bar">
+  <div class="brand"><h1>${CONFIG.title}</h1><span class="serial">${CONFIG.subtitle}</span></div>
+  ${showHome ? `<button class="btn" data-act="home" id="btn-home">${U.home}</button>` : ""}</header>`;
+
+function render() {
+  if (view.name === "home") {
+    const total = CATS.length * V.length, done = Object.keys(played).length;
+    const cols = CATS.length <= 4 ? CATS.length : (CATS.length <= 6 ? 3 : 4);
+    app.innerHTML = header(false) + `
+      <div class="grid" style="--cols:${cols}">
+        ${CATS.map((c, i) => { const left = leftIn(i);
+          return `<button class="cat${left === 0 ? " finished" : ""}" style="--cat:${color(i)}" data-act="cat" data-c="${i}">
+            <span class="name">${c.name}</span>
+            <span class="pips">${V.map((_, v) => `<span class="pip ${isPlayed(i, v) ? "done" : ""}"></span>`).join("")}</span>
+            <span class="left">${left === 0 ? U.finished : left + " " + (left > 1 ? U.questions : U.question)}</span></button>`; }).join("")}
+      </div>
+      <div class="foot"><span>${done} / ${total} ${U.played}</span>
+        ${armed ? `<span class="confirm"><span>${U.confirm}</span>
+            <button class="btn danger armed" data-act="reset-yes" id="btn-reset-yes">${U.yes}</button>
+            <button class="btn" data-act="reset-no" id="btn-reset-no">${U.cancel}</button></span>`
+          : `<button class="btn danger" data-act="reset" id="btn-reset">${U.newGame}</button>`}</div>`;
+  } else if (view.name === "cat") {
+    const c = CATS[view.c];
+    app.innerHTML = header(true) + `
+      <div class="cat-head" style="--cat:${color(view.c)}"><span class="chip"></span><h2>${c.name}</h2></div>
+      <div class="values" style="--cat:${color(view.c)}; --vals:${V.length}">
+        ${V.map((val, v) => { const p = isPlayed(view.c, v);
+          return `<div class="val"><button class="note" data-act="q" data-v="${v}" ${p ? "disabled" : ""}>
+              <span class="amt">${val}</span><span class="cur">${CONFIG.unit}</span>
+              ${v === CONFIG.teamValueIndex ? `<span class="team">${U.team}</span>` : ""}</button>
+            ${p ? `<button class="reopen" data-act="reopen" data-v="${v}">${U.reopen}</button>` : ""}</div>`; }).join("")}
+      </div>`;
+  } else {
+    const item = CATS[view.c].q[view.v], mc = Array.isArray(item.options);
+    let body;
+    if (mc) {
+      body = `<div class="qtext static">${item.q}</div>
+        <div class="opts">${item.options.map((o, i) => {
+          const cls = view.revealed && i === item.answer ? "right" : (view.wrong.includes(i) ? "wrong" : "");
+          return `<button class="opt ${cls}" data-act="pick" data-i="${i}" ${view.revealed || view.wrong.includes(i) ? "disabled" : ""}>
+            <span class="ltr">${LETTERS[i]}</span><span>${o}</span></button>`; }).join("")}</div>
+        ${view.revealed ? "" : `<button class="btn" data-act="reveal" id="btn-reveal">${U.showAnswer}</button>`}`;
+    } else {
+      body = `<button class="qtext" data-act="reveal" id="btn-reveal">${item.q}</button>
+        ${view.revealed ? `<div class="answer"><span class="lbl">${U.answerLabel}</span>${item.answer}</div>`
+          : `<span class="hint">${U.hintOpen}</span>`}`;
+    }
+    app.innerHTML = header(true) + `
+      <section class="qcard" style="--cat:${color(view.c)}">
+        <div class="qtop"><span class="qcat">${CATS[view.c].name}</span><span class="qamt">${V[view.v]} ${CONFIG.unit}</span></div>
+        <div class="qbody">${view.v === CONFIG.teamValueIndex ? `<span class="equipo">${U.team}</span>` : ""}${body}</div>
+      </section>`;
+  }
+}
+
+app.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]");
+  if (!b || b.disabled) return;
+  const act = b.dataset.act;
+  if (act === "home") { view = { name: "home" }; armed = false; }
+  else if (act === "cat") { view = { name: "cat", c: +b.dataset.c }; }
+  else if (act === "q") { const v = +b.dataset.v; played[key(view.c, v)] = true; save(); view = { name: "q", c: view.c, v, revealed: false, wrong: [] }; }
+  else if (act === "pick") { const i = +b.dataset.i;
+    if (i === CATS[view.c].q[view.v].answer) view.revealed = true; else view.wrong.push(i); }
+  else if (act === "reveal") { const mc = Array.isArray(CATS[view.c].q[view.v].options); view.revealed = mc ? true : !view.revealed; }
+  else if (act === "reopen") { delete played[key(view.c, +b.dataset.v)]; save(); }
+  else if (act === "reset") armed = true;
+  else if (act === "reset-no") armed = false;
+  else if (act === "reset-yes") { played = {}; save(); armed = false; }
+  render();
+  if (act !== "pick") window.scrollTo(0, 0);
+});
+render();
+</script>
+</body></html>
